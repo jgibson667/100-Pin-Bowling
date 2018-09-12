@@ -13,4 +13,14 @@ public class PinCounter : MonoBehaviour
             pinCounter += 1;
         }
     }
+
+    void OnTriggerExit(Collider other)
+    {
+        if(other.tag == "Pin")
+        {
+            pinCounter -= 1;
+        }
+    }
+
+
 }
