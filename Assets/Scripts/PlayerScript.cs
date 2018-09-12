@@ -13,6 +13,7 @@ public class PlayerScript : MonoBehaviour
     public GameObject alleyCam;
 
     public float rotSpeed = 2f;
+    public float alleyCamSmooth = 0.8f;
 
     public float mouseDirX;
     public float mouseDirY;
@@ -42,7 +43,7 @@ public class PlayerScript : MonoBehaviour
 
             //Smooth pivot rotation.
             rot = Quaternion.LookRotation(ballRB.velocity, Vector3.up);
-            smoothRot = Quaternion.Slerp(transform.rotation, rot, rotSpeed * Time.deltaTime);
+            smoothRot = Quaternion.Slerp(this.transform.rotation, rot, rotSpeed * Time.deltaTime);
             transform.rotation = smoothRot;
 
             //Rotates Vector3 Y axis relative to the axis of this game object.
@@ -53,7 +54,8 @@ public class PlayerScript : MonoBehaviour
         }
         else
         {
-            this.transform.position = Vector3.SmoothDamp(this.transform.position, alleyCam.transform.position, ref ballVelocity, 0.8f);
+            this.transform.position = Vector3.SmoothDamp(this.transform.position, alleyCam.transform.position, ref ballVelocity, alleyCamSmooth);
+            this.transform.rotation = Quaternion.Slerp(this.transform.rotation, alleyCam.transform.rotation, rotSpeed * Time.deltaTime);
         }
         crossedLine = ball.GetComponent<BallCollision>().collidedWithLine;
     }
