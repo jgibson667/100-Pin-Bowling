@@ -11,23 +11,24 @@ public class PlayerScript : MonoBehaviour
     public Quaternion smoothRot;
     public Vector3 mouseDirVector;
     public GameObject alleyCam;
+    public AudioSource ballRollSound;
 
     public float rotSpeed = 2f;
     public float alleyCamSmooth = 0.8f;
 
     public float mouseDirX;
     public float mouseDirY;
+
     public float speed = 200f;
     public bool crossedLine = false;
-
-    public Vector3 ballVelocity;
+    public Vector3 vectorZero = Vector3.zero;
 
     // Use this for initialization
     void Start()
     {
         ballRB = ball.GetComponent<Rigidbody>();
         ballCol = ball.GetComponent<Collider>();
-        ballVelocity = ballRB.velocity;
+        ballRollSound = ball.GetComponent<AudioSource>();
 
         transform.eulerAngles = new Vector3(0f, 180f, 0f);
 
@@ -36,11 +37,30 @@ public class PlayerScript : MonoBehaviour
 
     void Update ()
     {
-        if(crossedLine == false)
-        {
-            mouseDirX = Input.GetAxis("Mouse X") * speed;
-            mouseDirY = Input.GetAxis("Mouse Y") * speed;
+        crossedLine = ball.GetComponent<BallCollision>().collidedWithLine;
 
+        mouseDirX = Input.GetAxis("Mouse X") * speed;
+        mouseDirY = Input.GetAxis("Mouse Y") * speed;
+
+        if (Input.touchCount > 0)
+        {
+            mouseDirX = Input.touches[0].deltaPosition.x;
+            mouseDirY = Input.touches[0].deltaPosition.y;
+        }
+
+    }
+
+    // Update is called once per frame
+    void FixedUpdate ()
+    {
+        if(ballRB.velocity != vectorZero)
+        {
+            ballRollSound.volume = ballRB.velocity.magnitude / 40f;
+            ballRollSound.pitch = ballRB.velocity.magnitude / 60f + 1;
+        }
+
+        if (crossedLine == false)
+        {
             //Smooth pivot rotation.
             rot = Quaternion.LookRotation(ballRB.velocity, Vector3.up);
             smoothRot = Quaternion.Slerp(this.transform.rotation, rot, rotSpeed * Time.deltaTime);
@@ -52,18 +72,14 @@ public class PlayerScript : MonoBehaviour
             //Pivot point follow ball.
             transform.position = ball.transform.position;
         }
+
         else
         {
-            this.transform.position = Vector3.SmoothDamp(this.transform.position, alleyCam.transform.position, ref ballVelocity, alleyCamSmooth);
+            //Pan to alleyCam position and rotation smoothly.
+            this.transform.position = Vector3.SmoothDamp(this.transform.position, alleyCam.transform.position, ref vectorZero, alleyCamSmooth);
             this.transform.rotation = Quaternion.Slerp(this.transform.rotation, alleyCam.transform.rotation, rotSpeed * Time.deltaTime);
         }
-        crossedLine = ball.GetComponent<BallCollision>().collidedWithLine;
-    }
-
-    // Update is called once per frame
-    void FixedUpdate ()
-    {
-        //Add force relative to pivot rotation.
-        ballRB.AddForce(mouseDirVector);
+            //Add force relative to pivot rotation.
+            ballRB.AddForce(mouseDirVector);
     }
 }
