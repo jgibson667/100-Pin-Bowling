@@ -11,16 +11,21 @@ public class PlayerScript : MonoBehaviour
     public Quaternion smoothRot;
     public Vector3 mouseDirVector;
     public GameObject alleyCam;
-    public AudioSource ballRollSound;
 
-    public float rotSpeed = 2f;
-    public float alleyCamSmooth = 0.8f;
+    public AudioSource ballSound;
+
+    public float smoothSpeed = 0.8f;
+    public float smoothRotSpeed = 1.5f;
 
     public float mouseDirX;
     public float mouseDirY;
 
     public float speed = 200f;
-    public bool crossedLine = false;
+
+    public bool collidedWithLine = false;
+    public bool collidedWithFloor = false;
+    public bool isGrounded;
+
     public Vector3 vectorZero = Vector3.zero;
 
     // Use this for initialization
@@ -28,16 +33,15 @@ public class PlayerScript : MonoBehaviour
     {
         ballRB = ball.GetComponent<Rigidbody>();
         ballCol = ball.GetComponent<Collider>();
-        ballRollSound = ball.GetComponent<AudioSource>();
-
-        transform.eulerAngles = new Vector3(0f, 180f, 0f);
-
+        ballSound = ball.GetComponent<AudioSource>();
     }
 
 
     void Update ()
     {
-        crossedLine = ball.GetComponent<BallCollision>().collidedWithLine;
+        collidedWithLine = ball.GetComponent<BallCollision>().collidedWithLine;
+        collidedWithFloor = ball.GetComponent<BallCollision>().collidedWithFloor;
+        isGrounded = ball.GetComponent<BallCollision>().isGrounded;
 
         mouseDirX = Input.GetAxis("Mouse X") * speed;
         mouseDirY = Input.GetAxis("Mouse Y") * speed;
@@ -53,31 +57,39 @@ public class PlayerScript : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate ()
     {
-        if(ballRB.velocity != vectorZero)
+        if(ballRB.velocity != vectorZero && isGrounded == true)
         {
-            ballRollSound.volume = ballRB.velocity.magnitude / 40f;
-            ballRollSound.pitch = ballRB.velocity.magnitude / 60f + 1;
+            ballSound.volume = ballRB.velocity.magnitude / 40f;
+            ballSound.pitch = ballRB.velocity.magnitude / 60f + 1.15f;
         }
 
-        if (crossedLine == false)
+        if (ballRB.velocity != vectorZero && isGrounded == false)
         {
-            //Smooth pivot rotation.
-            rot = Quaternion.LookRotation(ballRB.velocity, Vector3.up);
-            smoothRot = Quaternion.Slerp(this.transform.rotation, rot, rotSpeed * Time.deltaTime);
-            transform.rotation = smoothRot;
+            ballSound.volume = 0f;
+        }
+
+        if (collidedWithLine == false)
+        {
+            if(ballRB.velocity.magnitude != 0)
+            {
+                //Smooth pivot rotation.
+                transform.rotation = smoothRot;
+                rot = Quaternion.LookRotation(ballRB.velocity, Vector3.up);
+                smoothRot = Quaternion.Lerp(this.transform.rotation, rot, smoothRotSpeed * Time.deltaTime);
+
+                //Pivot point follow ball.
+                transform.position = ball.transform.position;
+            }
 
             //Rotates Vector3 Y axis relative to the axis of this game object.
-            mouseDirVector = Quaternion.AngleAxis(this.transform.eulerAngles.y, Vector3.up) * new Vector3(mouseDirX, 0f, mouseDirY);
-
-            //Pivot point follow ball.
-            transform.position = ball.transform.position;
+            mouseDirVector = Quaternion.AngleAxis(this.transform.eulerAngles.y, Vector3.up) * new Vector3(mouseDirX, 0f, mouseDirY);            
         }
 
         else
         {
             //Pan to alleyCam position and rotation smoothly.
-            this.transform.position = Vector3.SmoothDamp(this.transform.position, alleyCam.transform.position, ref vectorZero, alleyCamSmooth);
-            this.transform.rotation = Quaternion.Slerp(this.transform.rotation, alleyCam.transform.rotation, rotSpeed * Time.deltaTime);
+            this.transform.position = Vector3.SmoothDamp(this.transform.position, alleyCam.transform.position, ref vectorZero, smoothSpeed);
+            this.transform.rotation = Quaternion.Lerp(this.transform.rotation, alleyCam.transform.rotation, smoothRotSpeed * Time.deltaTime);
         }
             //Add force relative to pivot rotation.
             ballRB.AddForce(mouseDirVector);
