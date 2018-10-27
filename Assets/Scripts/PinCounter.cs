@@ -4,23 +4,17 @@ using UnityEngine;
 
 public class PinCounter : MonoBehaviour
 {
-    public int pinCounter;
+    public GameObject[] pins;
 
-    void OnTriggerEnter(Collider other)
+    // Start is called before the first frame update
+    void Start()
     {
-        if(other.tag == "Pin")
-        {
-            pinCounter += 1;
-        }
+
     }
 
-    void OnTriggerExit(Collider other)
+    // Update is called once per frame
+    void Update()
     {
-        if(other.tag == "Pin")
-        {
-            pinCounter -= 1;
-        }
+        
     }
-
-
 }
